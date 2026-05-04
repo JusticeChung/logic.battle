@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>知識拔河：長題目優化版</title>
+    <title>知識拔河：對齊修復版</title>
     <style>
         :root { --team-a-col: #3498db; --team-b-col: #e74c3c; }
         body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #f0f3f5; margin: 0; overflow: hidden; touch-action: manipulation; }
@@ -20,41 +20,44 @@
         
         .team-name-label { position: absolute; top: -25px; font-weight: 900; font-size: 20px; }
 
-        /* 題目框優化：置左對齊與保留換行 */
+        /* 核心修復：題目置左但保持框框置中，不擋住下方選項 */
         #q-box { 
-            position: absolute; top: 130px; left: 50%; transform: translateX(-50%); 
-            width: 85%; max-width: 700px; background: white; padding: 25px; border-radius: 20px; 
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15); z-index: 100; border: 3px solid #333;
-            text-align: left; /* 題目置左 */
-            white-space: pre-wrap; /* 保留換行符號 */
-            word-wrap: break-word;
+            position: relative; /* 改回 relative 讓它佔據空間，不遮擋下方 */
+            margin: 20px auto; 
+            width: 85%; max-width: 700px; 
+            background: white; padding: 20px; border-radius: 20px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: 3px solid #333;
+            z-index: 40;
         }
         
-        #q-text { font-size: 24px; font-weight: bold; margin: 10px 0; line-height: 1.4; color: #2c3e50; }
+        #q-text { 
+            font-size: 24px; font-weight: bold; line-height: 1.4; 
+            text-align: left; /* 這裡實現題目置左 */
+            white-space: pre-wrap; /* 實現換行 */
+            word-wrap: break-word;
+            margin-top: 10px;
+        }
 
-        .options-grid { width: 100%; max-width: 320px; display: grid; gap: 12px; margin-top: 110px; }
-        .opt-btn { padding: 18px 10px; font-size: 20px; font-weight: bold; border-radius: 15px; border: 3px solid #ddd; background: white; cursor: pointer; box-shadow: 0 6px 0 #ddd; }
+        #main-game { display: flex; height: calc(100vh - 280px); } /* 調整高度確保不重疊 */
+        .team-side { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #side-a { background: #ebf5ff; border-right: 3px dashed #adcce9; }
+        #side-b { background: #fff5f5; }
+        
+        .options-grid { width: 90%; max-width: 300px; display: grid; gap: 15px; }
+        .opt-btn { padding: 18px 10px; font-size: 22px; font-weight: bold; border-radius: 15px; border: 3px solid #ddd; background: white; cursor: pointer; box-shadow: 0 6px 0 #ddd; }
         
         .nav-btns { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 500; }
         .nav-btn { padding: 12px 20px; border-radius: 30px; border: none; color: white; font-weight: bold; font-size: 14px; cursor: pointer; }
 
-        /* 編輯面板優化 */
         #settings-panel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; padding: 20px; overflow-y: auto; box-sizing: border-box; }
-        .sync-box { background: #fef9e7; padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 2px dashed #f1c40f; }
-        .q-input-row { background: #f0f4f7; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #ddd; }
-        
-        .edit-textarea { width: 100%; height: 80px; margin: 5px 0; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
-        .sync-textarea { width: 100%; height: 60px; margin-top: 10px; box-sizing: border-box; }
-        
-        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
-        #modal-content { background: white; width: 85%; max-width: 450px; padding: 30px; border-radius: 30px; text-align: center; }
+        .bulk-textarea { width: 100%; height: 200px; margin: 10px 0; padding: 10px; font-family: monospace; }
     </style>
 </head>
 <body>
 
     <div class="nav-btns">
-        <button class="nav-btn" style="background: #333;" onclick="toggleSet(true)">⚙️ 編輯與同步</button>
-        <button class="nav-btn" style="background: #f39c12;" onclick="location.reload()">🔄 重新開始</button>
+        <button class="nav-btn" style="background: #333;" onclick="toggleSet(true)">⚙️ 批量匯入</button>
+        <button class="nav-btn" style="background: #f39c12;" onclick="location.reload()">🔄 重開遊戲</button>
     </div>
 
     <div id="header">
@@ -76,77 +79,41 @@
     </div>
 
     <div id="settings-panel">
-        <h2>⚙️ 題庫管理與同步</h2>
-        
-        <div class="sync-box">
-            <strong>📱 跨裝置同步：</strong><br>
-            <button onclick="exportData()" style="background:#f39c12; color:white; border:none; padding:8px 15px; border-radius:5px; margin-top:10px;">📤 複製題庫密碼</button>
-            <textarea id="import-area" class="sync-textarea" placeholder="在此貼上密碼..."></textarea>
-            <button onclick="importData()" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:5px; margin-top:5px;">📥 匯入題庫</button>
-        </div>
-
-        <div id="q-list-container"></div>
-        <button onclick="addQRow()" style="background:#3498db; color:white; border:none; padding:15px; border-radius:10px; width:100%;">+ 新增題目</button>
-        <button onclick="saveSet()" style="background:#2ecc71; color:white; padding:20px; border:none; border-radius:15px; width:100%; margin-top:15px; font-size:20px; font-weight:bold;">💾 儲存並套用</button>
-        <button onclick="toggleSet(false)" style="width:100%; padding:10px; color:#666; border:none; background:none;">取消</button>
+        <h2>🚀 批量匯入題目</h2>
+        <p>格式：題目 | 選項1,選項2,選項3,選項4 | 答案序號(0-3)</p>
+        <textarea id="bulk-input" class="bulk-textarea" placeholder="在此貼上清單..."></textarea>
+        <button onclick="bulkImport()" style="background:#3498db; color:white; border:none; padding:15px; border-radius:10px; width:100%; font-weight:bold;">儲存並套用</button>
+        <button onclick="toggleSet(false)" style="width:100%; padding:10px; border:none; background:none;">取消</button>
     </div>
 
-    <div id="modal">
-        <div id="modal-content">
+    <div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2000; justify-content:center; align-items:center;">
+        <div style="background:white; width:85%; max-width:450px; padding:30px; border-radius:30px; text-align:center;">
             <h2 id="m-title" style="font-size:32px;"></h2>
             <div id="m-body" style="font-size: 20px; margin: 20px 0;"></div>
-            <button onclick="closeM()" id="m-btn" style="width:100%; padding:18px; background:#333; color:white; border:none; border-radius:15px; font-size:22px;">繼續</button>
+            <button onclick="closeM()" style="width:100%; padding:18px; background:#333; color:white; border:none; border-radius:15px; font-size:22px;">繼續</button>
         </div>
     </div>
 
     <script>
-        let gameData = { win: 5, nameA: "藍隊", nameB: "紅隊", questions: [{ q: "這是一個長題目範例：\n第一行內容\n第二行內容", o: ["答案1", "答案2", "答案3", "答案4"], a: 0, d: "" }] };
+        let gameData = { win: 5, nameA: "藍隊", nameB: "紅隊", questions: [{ q: "請匯入題目清單開始遊戲。", o: ["A", "B", "C", "D"], a: 0 }] };
         let score = 0, pool = [], current = null, locked = false;
 
-        function exportData() {
-            const dataStr = btoa(unescape(encodeURIComponent(JSON.stringify(gameData))));
-            navigator.clipboard.writeText(dataStr).then(() => alert("題庫密碼已複製！"));
-        }
+        function toggleSet(show) { document.getElementById('settings-panel').style.display = show ? 'block' : 'none'; }
 
-        function importData() {
-            const input = document.getElementById('import-area').value;
-            try {
-                const decoded = JSON.parse(decodeURIComponent(escape(atob(input))));
-                if(decoded.questions) { gameData = decoded; saveSet(); alert("匯入成功！"); }
-            } catch(e) { alert("無效的密碼。"); }
-        }
-
-        function toggleSet(show) { document.getElementById('settings-panel').style.display = show ? 'block' : 'none'; if(show) renderQRows(); }
-
-        function renderQRows() {
-            const container = document.getElementById('q-list-container');
-            container.innerHTML = '';
-            gameData.questions.forEach(q => addQRow(q));
-        }
-
-        function addQRow(q = {q:'', o:['','','',''], a:0, d:''}) {
-            const row = document.createElement('div');
-            row.className = 'q-input-row';
-            row.innerHTML = `
-                題目 (可換行)：<textarea class="in-q edit-textarea">${q.q}</textarea>
-                選項 (逗號隔開)：<input type="text" class="in-o" value="${q.o.join(',')}" style="width:100%; margin: 5px 0; padding: 8px;">
-                答案索引 (0-3)：<input type="number" class="in-a" value="${q.a}" style="width:50px; padding: 5px;">
-                <button onclick="this.parentElement.remove()" style="color:red; border:none; background:none; float:right;">[刪除]</button>
-                <div style="clear:both;"></div>
-            `;
-            document.getElementById('q-list-container').appendChild(row);
-        }
-
-        function saveSet() {
+        function bulkImport() {
+            const text = document.getElementById('bulk-input').value.trim();
+            if (!text) return;
+            const lines = text.split('\n');
             const newQs = [];
-            document.querySelectorAll('.q-input-row').forEach(row => {
-                const q = row.querySelector('.in-q').value;
-                const o = row.querySelector('.in-o').value.split(',');
-                if(q && o.length >= 2) newQs.push({ q, o, a: parseInt(row.querySelector('.in-a').value)||0, d: "" });
+            lines.forEach(l => {
+                const p = l.split('|');
+                if (p.length >= 3) newQs.push({ q: p[0].trim(), o: p[1].split(',').map(s => s.trim()), a: parseInt(p[2].trim()) || 0 });
             });
-            if(newQs.length > 0) gameData.questions = newQs;
-            localStorage.setItem('tug_v10', JSON.stringify(gameData));
-            location.reload();
+            if (newQs.length > 0) {
+                gameData.questions = newQs;
+                localStorage.setItem('tug_v12', JSON.stringify(gameData));
+                location.reload();
+            }
         }
 
         function updateRope() {
@@ -157,10 +124,8 @@
         }
 
         function init() {
-            const saved = localStorage.getItem('tug_v10');
+            const saved = localStorage.getItem('tug_v12');
             if (saved) gameData = JSON.parse(saved);
-            document.getElementById('label-a').innerText = gameData.nameA;
-            document.getElementById('label-b').innerText = gameData.nameB;
             pool = [...gameData.questions].sort(() => Math.random() - 0.5);
             updateRope();
             next();
@@ -204,8 +169,6 @@
         function showFinalWinner(msg) {
             document.getElementById('m-title').innerText = "遊戲結束！";
             document.getElementById('m-body').innerHTML = `<h2 style="color:#f1c40f;">🏆 ${msg}</h2>`;
-            document.getElementById('m-btn').innerText = "重新開始";
-            document.getElementById('m-btn').onclick = () => location.reload();
             document.getElementById('modal').style.display = "flex";
         }
 
