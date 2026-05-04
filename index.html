@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>知識拔河：精簡對戰版</title>
+    <title>知識拔河：對齊修正版</title>
     <style>
         :root { --team-a-col: #3498db; --team-b-col: #e74c3c; }
         body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #f0f3f5; margin: 0; overflow: hidden; touch-action: manipulation; }
         
-        /* 拔河區：確保軌道與球完美居中 */
+        /* 拔河區：固定高度與對齊 */
         #header { height: 110px; background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.1); position: relative; z-index: 50; padding-top: 20px; }
         #track-container { width: 85%; margin: 0 auto; position: relative; height: 60px; display: flex; align-items: center; }
         #track { width: 100%; height: 20px; background: #ddd; border-radius: 10px; border: 1px solid #bbb; position: relative; display: flex; align-items: center; }
         
-        /* 黃色圓球：使用相對父級 track 的居中處理 */
+        /* 黃色圓球：強制垂直置中 */
         #rope { 
             width: 50px; 
             height: 50px; 
@@ -21,7 +21,7 @@
             border: 4px solid #333; 
             border-radius: 50%; 
             position: absolute; 
-            left: calc(50% - 25px); 
+            left: calc(50% - 25px); /* 初始位置居中 */
             transition: left 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28); 
             display: flex; 
             align-items: center; 
@@ -41,18 +41,16 @@
         
         #q-box { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 700px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); text-align: center; z-index: 100; border: 3px solid #333; }
         
-        .options-grid { width: 100%; max-width: 320px; display: grid; gap: 15px; margin-top: 90px; }
-        .opt-btn { padding: 20px 15px; font-size: 22px; font-weight: bold; border-radius: 15px; border: 3px solid #ddd; background: white; cursor: pointer; box-shadow: 0 6px 0 #ddd; }
+        .options-grid { width: 100%; max-width: 320px; display: grid; gap: 12px; margin-top: 80px; }
+        .opt-btn { padding: 18px 10px; font-size: 20px; font-weight: bold; border-radius: 15px; border: 3px solid #ddd; background: white; cursor: pointer; box-shadow: 0 6px 0 #ddd; }
         .opt-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #ddd; }
 
         .nav-btns { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 500; }
         .nav-btn { padding: 12px 25px; border-radius: 30px; border: none; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; }
 
         #gallery-panel, #settings-panel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; padding: 30px; overflow-y: auto; box-sizing: border-box; }
-        .gallery-item { background: #f9f9f9; padding: 20px; border-radius: 15px; margin-bottom: 15px; border-left: 6px solid #f1c40f; }
-        
         .q-input-row { background: #f0f4f7; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #ccc; }
-        input, textarea { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+        input, textarea { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
         #modal-content { background: white; color: #333; width: 85%; max-width: 450px; padding: 35px; border-radius: 30px; text-align: center; }
@@ -77,7 +75,7 @@
 
     <div id="q-box">
         <div id="q-count" style="font-size:14px; color: #888; margin-bottom:5px;">剩餘題目: 0</div>
-        <p id="q-text" style="font-size:26px; font-weight:bold; margin:0;">準備開始...</p>
+        <p id="q-text" style="font-size:26px; font-weight:bold; margin:0;">載入中...</p>
     </div>
 
     <div id="main-game">
@@ -85,42 +83,39 @@
         <div class="team-side" id="side-b"><div class="options-grid" id="opts-b"></div></div>
     </div>
 
+    <!-- 面板與彈窗結構保持不變 -->
     <div id="gallery-panel">
-        <h1 style="text-align:center;">📖 知識圖鑑庫</h1>
+        <h1 style="text-align:center;">📖 知識圖鑑</h1>
         <div id="gallery-list"></div>
-        <button onclick="toggleGallery(false)" style="width:100%; padding:20px; background:#333; color:white; border:none; border-radius:15px; font-size:18px; margin-top:20px;">返回遊戲</button>
+        <button onclick="toggleGallery(false)" style="width:100%; padding:20px; background:#333; color:white; border:none; border-radius:15px;">返回遊戲</button>
     </div>
 
     <div id="settings-panel">
         <h1>⚙️ 題庫管理</h1>
         <div id="q-list-container"></div>
         <button onclick="addQRow()" style="background:#3498db; color:white; border:none; padding:15px; border-radius:10px; width:100%;">+ 新增題目</button>
-        <button onclick="saveSet()" style="background:#2ecc71; color:white; padding:20px; border:none; border-radius:15px; font-size:20px; font-weight:bold; width:100%; margin-top:15px;">💾 儲存</button>
+        <button onclick="saveSet()" style="background:#2ecc71; color:white; padding:20px; border:none; border-radius:15px; width:100%; margin-top:15px;">💾 儲存並重新開始</button>
         <button onclick="toggleSet(false)" style="width:100%; padding:10px; color:#666; border:none; background:none;">取消</button>
     </div>
 
     <div id="modal">
         <div id="modal-content">
             <h2 id="m-title" style="font-size:32px; margin:0;"></h2>
-            <div id="m-body">
-                <div id="m-desc" style="font-size:18px; line-height:1.6; margin:20px 0; background:#f9f9f9; padding:15px; border-radius:15px;"></div>
-            </div>
-            <button onclick="closeM()" id="m-btn" style="width:100%; padding:18px; background:#333; color:white; border:none; border-radius:15px; font-size:22px; font-weight:bold;">繼續下一題</button>
+            <div id="m-body"></div>
+            <button onclick="closeM()" id="m-btn" style="width:100%; padding:18px; background:#333; color:white; border:none; border-radius:15px; font-size:22px; margin-top:20px;">下一題</button>
         </div>
     </div>
 
     <script>
-        let gameData = { win: 5, nameA: "藍隊", nameB: "紅隊", questions: [{ q: "範例：地球上最大的動物？", o: ["大象", "藍鯨", "長頸鹿", "河馬"], a: 1, d: "解析：藍鯨是目前已知地球上體型最大的動物。" }] };
+        let gameData = { win: 5, nameA: "藍隊", nameB: "紅隊", questions: [{ q: "測試題目", o: ["1", "2", "3", "4"], a: 0, d: "測試解析" }] };
         let score = 0, pool = [], current = null, locked = false;
 
         function toggleGallery(show) {
             document.getElementById('gallery-panel').style.display = show ? 'block' : 'none';
             if(show) {
                 document.getElementById('gallery-list').innerHTML = gameData.questions.map(q => `
-                    <div class="gallery-item">
-                        <div style="font-weight:bold; font-size:18px;">${q.q}</div>
-                        <div style="color:green;">正確答案：${q.o[q.a]}</div>
-                        <div style="font-size:14px; color:#666; margin-top:10px;">${q.d}</div>
+                    <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin-bottom:10px; border-left:5px solid #f1c40f;">
+                        <b>${q.q}</b><br><span style="color:green">答案：${q.o[q.a]}</span>
                     </div>`).join('');
             }
         }
@@ -134,17 +129,16 @@
         }
 
         function addQRow(q = {q:'', o:['','','',''], a:0, d:''}) {
-            const container = document.getElementById('q-list-container');
             const row = document.createElement('div');
             row.className = 'q-input-row';
             row.innerHTML = `
                 題目：<input type="text" class="in-q" value="${q.q}">
-                選項 (逗號隔開)：<input type="text" class="in-o" value="${q.o.join(',')}">
-                答案索引 (0-3)：<input type="number" class="in-a" value="${q.a}">
+                選項(逗號隔開)：<input type="text" class="in-o" value="${q.o.join(',')}">
+                答案(0-3)：<input type="number" class="in-a" value="${q.a}">
                 解析：<textarea class="in-d">${q.d}</textarea>
-                <button onclick="this.parentElement.remove()" style="color:red; border:none; background:none;">刪除</button>
+                <button onclick="this.parentElement.remove()" style="color:red; border:none; background:none;">[刪除]</button>
             `;
-            container.appendChild(row);
+            document.getElementById('q-list-container').appendChild(row);
         }
 
         function saveSet() {
@@ -152,26 +146,34 @@
             document.querySelectorAll('.q-input-row').forEach(row => {
                 const q = row.querySelector('.in-q').value;
                 const o = row.querySelector('.in-o').value.split(',');
-                if(q && o.length >= 2) newQs.push({ q, o, a: parseInt(row.querySelector('.in-a').value), d: row.querySelector('.in-d').value });
+                if(q && o.length >= 2) newQs.push({ q, o, a: parseInt(row.querySelector('.in-a').value)||0, d: row.querySelector('.in-d').value });
             });
-            gameData.questions = newQs;
-            localStorage.setItem('tug_v7_final', JSON.stringify(gameData));
-            location.reload();
+            if(newQs.length > 0) gameData.questions = newQs;
+            localStorage.setItem('tug_v8', JSON.stringify(gameData));
+            location.reload(); // 儲存後強制刷新，解決組件位移問題
+        }
+
+        function updateRope() {
+            const rope = document.getElementById('rope');
+            const ratio = 50 / gameData.win;
+            const offset = 50 - (score * ratio);
+            rope.style.left = `calc(${Math.max(0, Math.min(100, offset))}% - 25px)`;
+            rope.innerText = Math.abs(score);
         }
 
         function init() {
-            const saved = localStorage.getItem('tug_v7_final');
+            const saved = localStorage.getItem('tug_v8');
             if (saved) gameData = JSON.parse(saved);
             document.getElementById('label-a').innerText = gameData.nameA;
             document.getElementById('label-b').innerText = gameData.nameB;
             pool = [...gameData.questions].sort(() => Math.random() - 0.5);
+            updateRope(); // 初始化圓球位置
             next();
         }
 
         function next() {
             if (pool.length === 0) {
-                let winner = score > 0 ? gameData.nameA : (score < 0 ? gameData.nameB : "雙方");
-                showFinalWinner(winner + (score === 0 ? "平手" : " 獲勝！"));
+                showFinalWinner((score > 0 ? gameData.nameA : (score < 0 ? gameData.nameB : "雙方")) + (score === 0 ? " 平手" : " 獲勝！"));
                 return;
             }
             locked = false;
@@ -192,55 +194,38 @@
             const win = (idx === current.a);
             if(team === 'a') score += (win ? 1 : -1);
             else score += (win ? -1 : 1);
-            showResultModal(win);
+            
+            updateRope();
+
+            if(Math.abs(score) >= gameData.win) {
+                showFinalWinner((score > 0 ? gameData.nameA : gameData.nameB) + " 獲勝！");
+            } else {
+                showResultModal(win);
+            }
         }
 
         function showResultModal(win) {
             const modal = document.getElementById('modal');
-            const btn = document.getElementById('m-btn');
-            const desc = document.getElementById('m-desc');
-            const body = document.getElementById('m-body');
-            
-            // 更新圓球位置
-            const ratio = 50 / gameData.win;
-            const offset = 50 - (score * ratio);
-            document.getElementById('rope').style.left = `calc(${Math.max(0, Math.min(100, offset))}% - 25px)`;
-            document.getElementById('rope').innerText = Math.abs(score);
-
-            // 檢查是否達成勝利分數
-            if(Math.abs(score) >= gameData.win) {
-                showFinalWinner((score > 0 ? gameData.nameA : gameData.nameB) + " 獲勝！");
-                return;
-            }
-
-            // 一般答題反饋
             document.getElementById('m-title').innerText = win ? "✅ 正確！" : "❌ 答錯了";
             document.getElementById('m-title').style.color = win ? "#2ecc71" : "#e74c3c";
-            body.style.display = "block";
-            desc.innerHTML = `答案：${current.o[current.a]}<br><small>${current.d}</small>`;
-            btn.innerText = "繼續下一題";
-            btn.onclick = closeM;
+            document.getElementById('m-body').innerHTML = `<div style="font-size:18px; margin:20px 0; background:#f9f9f9; padding:15px; border-radius:15px;">答案：${current.o[current.a]}<br><small>${current.d}</small></div>`;
+            document.getElementById('m-btn').innerText = "繼續下一題";
+            document.getElementById('m-btn').onclick = closeM;
             modal.style.display = "flex";
         }
 
         function showFinalWinner(msg) {
             const modal = document.getElementById('modal');
-            const btn = document.getElementById('m-btn');
-            const body = document.getElementById('m-body');
-            
             document.getElementById('m-title').innerText = "遊戲結束！";
-            document.getElementById('m-title').style.color = "#333";
-            
-            // 關鍵修改：勝利時只顯示勝利者文字
-            body.innerHTML = `<h2 style="color:#f1c40f; margin: 30px 0;">🏆 ${msg}</h2>`;
-            
-            btn.innerText = "重新開始";
-            btn.onclick = () => location.reload();
+            document.getElementById('m-body').innerHTML = `<h2 style="color:#f1c40f; margin: 30px 0;">🏆 ${msg}</h2>`;
+            document.getElementById('m-btn').innerText = "重新開始";
+            document.getElementById('m-btn').onclick = () => location.reload();
             modal.style.display = "flex";
         }
 
         function closeM() { document.getElementById('modal').style.display = 'none'; next(); }
-        init();
+        
+        window.onload = init;
     </script>
 </body>
 </html>
