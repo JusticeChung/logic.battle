@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>知識拔河：圖鑑學習版</title>
+    <title>知識拔河：精簡對戰版</title>
     <style>
         :root { --team-a-col: #3498db; --team-b-col: #e74c3c; }
         body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #f0f3f5; margin: 0; overflow: hidden; touch-action: manipulation; }
         
-        /* 拔河區：優化水平對齊 */
+        /* 拔河區：確保軌道與球完美居中 */
         #header { height: 110px; background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.1); position: relative; z-index: 50; padding-top: 20px; }
-        #track-container { width: 85%; margin: 0 auto; position: relative; height: 60px; }
-        #track { width: 100%; height: 20px; background: #ddd; border-radius: 10px; border: 1px solid #bbb; position: relative; top: 20px; }
+        #track-container { width: 85%; margin: 0 auto; position: relative; height: 60px; display: flex; align-items: center; }
+        #track { width: 100%; height: 20px; background: #ddd; border-radius: 10px; border: 1px solid #bbb; position: relative; display: flex; align-items: center; }
         
-        /* 黃色圓球：調整 top 值使其與 track 水平居中 */
+        /* 黃色圓球：使用相對父級 track 的居中處理 */
         #rope { 
             width: 50px; 
             height: 50px; 
@@ -21,7 +21,6 @@
             border: 4px solid #333; 
             border-radius: 50%; 
             position: absolute; 
-            top: 5px; /* 從 -1px 調整為 5px，使其垂直居中於 track */
             left: calc(50% - 25px); 
             transition: left 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28); 
             display: flex; 
@@ -33,7 +32,7 @@
             z-index: 60; 
         }
         
-        .team-name-label { position: absolute; top: -15px; font-weight: 900; font-size: 20px; }
+        .team-name-label { position: absolute; top: -25px; font-weight: 900; font-size: 20px; }
 
         #main-game { display: flex; height: calc(100vh - 130px); }
         .team-side { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
@@ -56,6 +55,7 @@
         input, textarea { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
         
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
+        #modal-content { background: white; color: #333; width: 85%; max-width: 450px; padding: 35px; border-radius: 30px; text-align: center; }
     </style>
 </head>
 <body>
@@ -70,7 +70,6 @@
             <div class="team-name-label" id="label-a" style="left:0; color:var(--team-a-col)">藍隊</div>
             <div class="team-name-label" id="label-b" style="right:0; color:var(--team-b-col)">紅隊</div>
             <div id="track">
-                <!-- 繩子球現在會完美對齊軌道中心 -->
                 <div id="rope">0</div>
             </div>
         </div>
@@ -101,15 +100,16 @@
     </div>
 
     <div id="modal">
-        <div style="background:white; color:#333; width:85%; max-width:450px; padding:35px; border-radius:30px; text-align:center;">
-            <h2 id="m-title" style="font-size:32px; margin-top:0;"></h2>
-            <div id="m-desc" style="font-size:18px; line-height:1.6; margin:20px 0; background:#f9f9f9; padding:15px; border-radius:15px;"></div>
+        <div id="modal-content">
+            <h2 id="m-title" style="font-size:32px; margin:0;"></h2>
+            <div id="m-body">
+                <div id="m-desc" style="font-size:18px; line-height:1.6; margin:20px 0; background:#f9f9f9; padding:15px; border-radius:15px;"></div>
+            </div>
             <button onclick="closeM()" id="m-btn" style="width:100%; padding:18px; background:#333; color:white; border:none; border-radius:15px; font-size:22px; font-weight:bold;">繼續下一題</button>
         </div>
     </div>
 
     <script>
-        // 邏輯保持不變
         let gameData = { win: 5, nameA: "藍隊", nameB: "紅隊", questions: [{ q: "範例：地球上最大的動物？", o: ["大象", "藍鯨", "長頸鹿", "河馬"], a: 1, d: "解析：藍鯨是目前已知地球上體型最大的動物。" }] };
         let score = 0, pool = [], current = null, locked = false;
 
@@ -155,12 +155,12 @@
                 if(q && o.length >= 2) newQs.push({ q, o, a: parseInt(row.querySelector('.in-a').value), d: row.querySelector('.in-d').value });
             });
             gameData.questions = newQs;
-            localStorage.setItem('tug_v6_final', JSON.stringify(gameData));
+            localStorage.setItem('tug_v7_final', JSON.stringify(gameData));
             location.reload();
         }
 
         function init() {
-            const saved = localStorage.getItem('tug_v6_final');
+            const saved = localStorage.getItem('tug_v7_final');
             if (saved) gameData = JSON.parse(saved);
             document.getElementById('label-a').innerText = gameData.nameA;
             document.getElementById('label-b').innerText = gameData.nameB;
@@ -171,9 +171,7 @@
         function next() {
             if (pool.length === 0) {
                 let winner = score > 0 ? gameData.nameA : (score < 0 ? gameData.nameB : "雙方");
-                showResultModal(true, `遊戲結束！恭喜 ${winner} 獲勝！`);
-                document.getElementById('m-btn').innerText = "重新開始";
-                document.getElementById('m-btn').onclick = () => location.reload();
+                showFinalWinner(winner + (score === 0 ? "平手" : " 獲勝！"));
                 return;
             }
             locked = false;
@@ -197,19 +195,48 @@
             showResultModal(win);
         }
 
-        function showResultModal(win, customTitle) {
-            document.getElementById('m-title').innerText = customTitle || (win ? "✅ 正確！" : "❌ 答錯了");
-            document.getElementById('m-desc').innerHTML = `答案：${current.o[current.a]}<br><small>${current.d}</small>`;
-            document.getElementById('modal').style.display = 'flex';
-            const offset = 50 - (score * (50/gameData.win));
+        function showResultModal(win) {
+            const modal = document.getElementById('modal');
+            const btn = document.getElementById('m-btn');
+            const desc = document.getElementById('m-desc');
+            const body = document.getElementById('m-body');
+            
+            // 更新圓球位置
+            const ratio = 50 / gameData.win;
+            const offset = 50 - (score * ratio);
             document.getElementById('rope').style.left = `calc(${Math.max(0, Math.min(100, offset))}% - 25px)`;
             document.getElementById('rope').innerText = Math.abs(score);
+
+            // 檢查是否達成勝利分數
             if(Math.abs(score) >= gameData.win) {
-                 document.getElementById('m-btn').innerText = "重新開始";
-                 document.getElementById('m-btn').onclick = () => location.reload();
-            } else {
-                 document.getElementById('m-btn').onclick = closeM;
+                showFinalWinner((score > 0 ? gameData.nameA : gameData.nameB) + " 獲勝！");
+                return;
             }
+
+            // 一般答題反饋
+            document.getElementById('m-title').innerText = win ? "✅ 正確！" : "❌ 答錯了";
+            document.getElementById('m-title').style.color = win ? "#2ecc71" : "#e74c3c";
+            body.style.display = "block";
+            desc.innerHTML = `答案：${current.o[current.a]}<br><small>${current.d}</small>`;
+            btn.innerText = "繼續下一題";
+            btn.onclick = closeM;
+            modal.style.display = "flex";
+        }
+
+        function showFinalWinner(msg) {
+            const modal = document.getElementById('modal');
+            const btn = document.getElementById('m-btn');
+            const body = document.getElementById('m-body');
+            
+            document.getElementById('m-title').innerText = "遊戲結束！";
+            document.getElementById('m-title').style.color = "#333";
+            
+            // 關鍵修改：勝利時只顯示勝利者文字
+            body.innerHTML = `<h2 style="color:#f1c40f; margin: 30px 0;">🏆 ${msg}</h2>`;
+            
+            btn.innerText = "重新開始";
+            btn.onclick = () => location.reload();
+            modal.style.display = "flex";
         }
 
         function closeM() { document.getElementById('modal').style.display = 'none'; next(); }
