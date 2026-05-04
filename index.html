@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>知識拔河：題庫全遊玩版</title>
+    <title>知識拔河：精準識別版</title>
     <style>
         :root { --team-a-col: #3498db; --team-b-col: #e74c3c; }
         body { font-family: -apple-system, sans-serif; background: #f0f3f5; margin: 0; overflow: hidden; }
@@ -26,8 +26,8 @@
         .opt-btn { padding: 15px; font-size: 18px; font-weight: bold; border-radius: 12px; border: 3px solid #ddd; background: white; cursor: pointer; }
         .nav-btns { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 500; }
         .nav-btn { padding: 10px 15px; border-radius: 20px; border: none; color: white; font-weight: bold; cursor: pointer; }
-        #settings-panel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; padding: 20px; box-sizing: border-box; }
-        .bulk-textarea { width: 100%; height: 70%; margin: 10px 0; padding: 10px; border: 2px solid #3498db; }
+        #settings-panel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .bulk-textarea { width: 100%; height: 50%; margin: 10px 0; padding: 10px; border: 2px solid #3498db; font-size: 14px; }
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
         #modal-content { background: white; width: 85%; padding: 25px; border-radius: 25px; text-align: center; border: 5px solid #333; }
         #m-explanation { background: #f9f9f9; padding: 15px; border-radius: 10px; margin-top: 15px; text-align: left; border-left: 5px solid #f1c40f; display: none; }
@@ -50,7 +50,7 @@
 
     <div id="q-box">
         <div id="q-count" style="text-align:center; color:#888; font-size:12px; margin-bottom:5px;"></div>
-        <div id="q-text">請匯入題目</div>
+        <div id="q-text">請點擊下方「批量匯入」按鈕添加題目。</div>
     </div>
 
     <div id="main-game">
@@ -59,10 +59,16 @@
     </div>
 
     <div id="settings-panel">
-        <h2>🚀 批量匯入題目</h2>
-        <textarea id="bulk-input" class="bulk-textarea" placeholder="題目 | 選項1,選項2 | 答案序號 | 解析"></textarea>
-        <button onclick="bulkImport()" style="background:#3498db; color:white; width:100%; padding:15px; border:none; border-radius:10px; font-weight:bold;">儲存並開始</button>
-        <button onclick="toggleSet(false)" style="width:100%; background:none; border:none; color:#999; margin-top:10px;">取消</button>
+        <h2>🚀 批量匯入 (每一題用 *** 隔開)</h2>
+        <p style="font-size: 14px; color: #666;">
+            格式：題目 | 選項(用逗號隔開) | 答案序號 | 解析內容<br>
+            <b>重要：題目與題目之間請務必加上 *** 符號作為分隔。</b>
+        </p>
+        <textarea id="bulk-input" class="bulk-textarea" placeholder="題目... | 選項... | 0 | 解析...
+***
+題目... | 選項... | 1 | 解析..."></textarea>
+        <button onclick="bulkImport()" style="background:#3498db; color:white; width:100%; padding:15px; border:none; border-radius:10px; font-weight:bold; font-size: 18px;">儲存並開始</button>
+        <button onclick="toggleSet(false)" style="width:100%; background:none; border:none; color:#999; margin-top:10px;">取消返回</button>
     </div>
 
     <div id="modal">
@@ -77,66 +83,73 @@
     <script>
         let gameData = { questions: [] };
         let score = 0, pool = [], current = null, locked = false;
-        const WIN_RANGE = 10; // 繩子移動範圍
 
         function toggleSet(show) { document.getElementById('settings-panel').style.display = show ? 'block' : 'none'; }
 
         function bulkImport() {
             const rawText = document.getElementById('bulk-input').value.trim();
             if (!rawText) return;
-            // 修正分割邏輯：確保多行題目能正確識別
-            const segments = rawText.split(/\n(?=[^|]+\|[^|]+\|\d+)/);
+
+            // 改用明確的 *** 作為分隔符
+            const rawQuestions = rawText.split('***');
             const newQs = [];
-            segments.forEach(seg => {
-                const parts = seg.split('|');
+
+            rawQuestions.forEach(qStr => {
+                const parts = qStr.split('|');
                 if (parts.length >= 3) {
                     newQs.push({ 
                         q: parts[0].trim(), 
                         o: parts[1].split(',').map(s => s.trim()), 
                         a: parseInt(parts[2].trim()) || 0,
-                        d: parts[3] ? parts[3].trim() : "（無解析內容）"
+                        d: parts[3] ? parts[3].trim() : "（無解析）"
                     });
                 }
             });
+
             if (newQs.length > 0) {
                 gameData.questions = newQs;
-                localStorage.setItem('tug_v16_final', JSON.stringify(gameData));
+                localStorage.setItem('tug_v17_final', JSON.stringify(gameData));
                 location.reload();
+            } else {
+                alert("未偵測到有效題目，請確認是否使用了 | 分隔欄位。");
             }
         }
 
         function updateRope() {
             const rope = document.getElementById('rope');
-            // 繩子計算：以 50% 為中心，根據分數左右移動
-            let percent = 50 - (score * 10); 
+            let percent = 50 - (score * 8); 
             percent = Math.max(5, Math.min(95, percent));
             rope.style.left = `calc(${percent}% - 25px)`;
             rope.innerText = Math.abs(score);
         }
 
         function init() {
-            const saved = localStorage.getItem('tug_v16_final');
+            const saved = localStorage.getItem('tug_v17_final');
             if (saved) {
                 gameData = JSON.parse(saved);
-                pool = [...gameData.questions]; // 不隨機，按順序出題方便測試
-                document.getElementById('q-count').innerText = `剩餘題目: ${pool.length}`;
+                pool = [...gameData.questions];
+                updateRope();
                 next();
             }
         }
 
         function next() {
             if (pool.length === 0) {
-                showFinalWinner();
+                if (current) showFinalWinner();
                 return;
             }
             locked = false;
-            current = pool.shift(); // 從第一條開始出
+            current = pool.shift(); 
             document.getElementById('q-count').innerText = `剩餘題目: ${pool.length}`;
             document.getElementById('q-text').innerText = current.q;
+            
             ['a', 'b'].forEach(t => {
-                const box = document.getElementById('opts-'+t); box.innerHTML = '';
+                const box = document.getElementById('opts-'+t);
+                box.innerHTML = '';
                 current.o.forEach((txt, i) => {
-                    const b = document.createElement('button'); b.className = 'opt-btn'; b.innerText = txt;
+                    const b = document.createElement('button');
+                    b.className = 'opt-btn';
+                    b.innerText = txt;
                     b.onclick = () => { if(!locked) { locked=true; check(i, t); }};
                     box.appendChild(b);
                 });
@@ -152,7 +165,6 @@
         }
 
         function showResultModal(win) {
-            const modal = document.getElementById('modal');
             document.getElementById('m-title').innerText = win ? "✅ 正確！" : "❌ 答錯了";
             document.getElementById('m-title').style.color = win ? "#2ecc71" : "#e74c3c";
             document.getElementById('m-body').innerText = `正確答案：${current.o[current.a]}`;
@@ -161,14 +173,14 @@
             exp.innerHTML = `<b>💡 解析：</b><br>${current.d}`;
             document.getElementById('m-btn').innerText = "下一題";
             document.getElementById('m-btn').onclick = closeM;
-            modal.style.display = "flex";
+            document.getElementById('modal').style.display = "flex";
         }
 
         function showFinalWinner() {
             const winner = score > 0 ? "藍隊" : (score < 0 ? "紅隊" : "平手");
             document.getElementById('m-title').innerText = "🏆 遊戲結束";
             document.getElementById('m-title').style.color = "#f1c40f";
-            document.getElementById('m-body').innerText = `全數題目已完成！\n最終結果：${winner} 領先`;
+            document.getElementById('m-body').innerText = `所有題目已完成！\n最終結果：${winner} 領先`;
             document.getElementById('m-explanation').style.display = "none";
             document.getElementById('m-btn').innerText = "重新開始";
             document.getElementById('m-btn').onclick = () => location.reload();
