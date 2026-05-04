@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>知識拔河：含解析優化版</title>
+    <title>知識拔河：最終修復版</title>
     <style>
         :root { --team-a-col: #3498db; --team-b-col: #e74c3c; }
         body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #f0f3f5; margin: 0; overflow: hidden; touch-action: manipulation; }
         
-        /* 頂部拔河區 */
         #header { height: 110px; background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.1); position: relative; z-index: 50; padding-top: 20px; }
         #track-container { width: 85%; margin: 0 auto; position: relative; height: 60px; display: flex; align-items: center; }
         #track { width: 100%; height: 20px; background: #ddd; border-radius: 10px; border: 1px solid #bbb; position: relative; display: flex; align-items: center; }
@@ -19,45 +18,29 @@
         }
         .team-name-label { position: absolute; top: -25px; font-weight: 900; font-size: 20px; }
 
-        /* 題目區：置左顯示、支援換行、不遮擋下方 */
         #q-box { 
-            position: relative; 
-            margin: 20px auto; 
-            width: 85%; max-width: 750px; 
+            position: relative; margin: 20px auto; width: 85%; max-width: 750px; 
             background: white; padding: 20px; border-radius: 20px; 
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: 3px solid #333;
-            z-index: 40;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15); border: 3px solid #333; z-index: 40;
         }
-        #q-text { 
-            font-size: 24px; font-weight: bold; line-height: 1.5; 
-            text-align: left; /* 題目置左 */
-            white-space: pre-wrap; /* 支援換行 */
-            word-wrap: break-word;
-            margin-top: 10px;
-            color: #2c3e50;
-        }
+        #q-text { font-size: 24px; font-weight: bold; line-height: 1.5; text-align: left; white-space: pre-wrap; word-wrap: break-word; color: #2c3e50; }
 
-        /* 遊戲按鈕區 */
         #main-game { display: flex; height: calc(100vh - 300px); min-height: 350px; }
         .team-side { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #side-a { background: #ebf5ff; border-right: 2px dashed #adcce9; }
         #side-b { background: #fff5f5; }
         .options-grid { width: 90%; max-width: 320px; display: grid; gap: 15px; }
-        .opt-btn { padding: 18px 10px; font-size: 22px; font-weight: bold; border-radius: 15px; border: 3px solid #ddd; background: white; cursor: pointer; box-shadow: 0 6px 0 #ddd; transition: 0.1s; }
-        .opt-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #ddd; }
-
-        /* 功能按鈕 */
-        .nav-btns { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 500; }
-        .nav-btn { padding: 12px 20px; border-radius: 30px; border: none; color: white; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
-
-        /* 批量匯入面板 */
-        #settings-panel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; padding: 20px; overflow-y: auto; box-sizing: border-box; }
-        .bulk-textarea { width: 100%; height: 250px; margin: 10px 0; padding: 10px; font-family: monospace; border: 2px solid #3498db; border-radius: 10px; font-size: 16px; }
+        .opt-btn { padding: 18px 10px; font-size: 22px; font-weight: bold; border-radius: 15px; border: 3px solid #ddd; background: white; cursor: pointer; box-shadow: 0 6px 0 #ddd; }
         
-        /* 結果彈窗 */
+        .nav-btns { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 500; }
+        .nav-btn { padding: 12px 20px; border-radius: 30px; border: none; color: white; font-weight: bold; font-size: 14px; cursor: pointer; }
+
+        #settings-panel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; padding: 20px; box-sizing: border-box; }
+        .bulk-textarea { width: 100%; height: 250px; margin: 10px 0; padding: 10px; font-size: 16px; border: 2px solid #3498db; border-radius: 10px; }
+        
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; }
         #modal-content { background: white; width: 85%; max-width: 500px; padding: 30px; border-radius: 30px; text-align: center; border: 5px solid #333; }
-        #m-explanation { background: #f9f9f9; padding: 15px; border-radius: 15px; margin-top: 15px; text-align: left; font-size: 18px; color: #555; border-left: 5px solid #f1c40f; }
+        #m-explanation { background: #f9f9f9; padding: 15px; border-radius: 15px; margin-top: 15px; text-align: left; font-size: 18px; color: #555; border-left: 5px solid #f1c40f; display: none; }
     </style>
 </head>
 <body>
@@ -76,8 +59,8 @@
     </div>
 
     <div id="q-box">
-        <div id="q-count" style="font-size:14px; color: #888; text-align: center; margin-bottom: 5px;">剩餘題目: 0</div>
-        <div id="q-text">請點擊下方「批量匯入」按鈕設定題目及解析。</div>
+        <div id="q-count" style="font-size:14px; color: #888; text-align: center;">剩餘題目: 0</div>
+        <div id="q-text">請匯入題目開始遊戲。</div>
     </div>
 
     <div id="main-game">
@@ -86,18 +69,20 @@
     </div>
 
     <div id="settings-panel">
-        <h2>🚀 批量匯入題目與解析</h2>
-        <p style="color: #666;">格式：題目 | 選項1,選項2... | 答案序號(0-3) | <b>解析內容</b></p>
-        <textarea id="bulk-input" class="bulk-textarea" placeholder="例如：&#10;地球上最大的動物？ | 大象,藍鯨,河馬 | 1 | 藍鯨是目前體型最大的哺乳動物。"></textarea>
-        <button onclick="bulkImport()" style="background:#3498db; color:white; border:none; padding:15px; border-radius:10px; width:100%; font-weight:bold; font-size: 18px;">儲存並套用</button>
-        <button onclick="toggleSet(false)" style="width:100%; padding:15px; color:#999; border:none; background:none;">取消返回</button>
+        <h2>🚀 批量匯入題目</h2>
+        <p>格式：題目 | 選項1,選項2... | 答案序號(0-3) | 解析內容</p>
+        <textarea id="bulk-input" class="bulk-textarea" placeholder="在此貼上清單..."></textarea>
+        <button onclick="bulkImport()" style="background:#3498db; color:white; border:none; padding:15px; border-radius:10px; width:100%; font-weight:bold;">儲存並套用</button>
+        <button onclick="toggleSet(false)" style="width:100%; padding:15px; color:#999; border:none; background:none;">取消</button>
     </div>
 
     <div id="modal">
         <div id="modal-content">
-            <h2 id="m-title" style="font-size:32px; margin-bottom: 10px;"></h2>
+            <h2 id="m-title" style="font-size:32px; margin: 0 0 10px 0;"></h2>
             <div id="m-body" style="font-size: 22px; font-weight: bold; color: #2c3e50;"></div>
-            <div id="m-explanation"></div> <button onclick="closeM()" style="width:100%; padding:18px; background:#333; color:white; border:none; border-radius:15px; font-size:22px; margin-top: 20px; cursor: pointer;">下一題</button>
+            <div id="m-explanation"></div>
+            <!-- 這個按鈕的 id 設為 m-btn 方便用 JS 控制 -->
+            <button id="m-btn" onclick="closeM()" style="width:100%; padding:18px; background:#333; color:white; border:none; border-radius:15px; font-size:22px; margin-top: 20px; cursor: pointer;">繼續</button>
         </div>
     </div>
 
@@ -119,13 +104,13 @@
                         q: p[0].trim(), 
                         o: p[1].split(',').map(s => s.trim()), 
                         a: parseInt(p[2].trim()) || 0,
-                        d: p[3] ? p[3].trim() : "（此題無解析內容）" // 讀取第四欄：解析
+                        d: p[3] ? p[3].trim() : "此題無額外解析。"
                     });
                 }
             });
             if (newQs.length > 0) {
                 gameData.questions = newQs;
-                localStorage.setItem('tug_v13_final', JSON.stringify(gameData));
+                localStorage.setItem('tug_v14', JSON.stringify(gameData));
                 location.reload();
             }
         }
@@ -138,7 +123,7 @@
         }
 
         function init() {
-            const saved = localStorage.getItem('tug_v13_final');
+            const saved = localStorage.getItem('tug_v14');
             if (saved) gameData = JSON.parse(saved);
             if (gameData.questions.length > 0) {
                 pool = [...gameData.questions].sort(() => Math.random() - 0.5);
@@ -180,22 +165,33 @@
         }
 
         function showResultModal(win) {
+            const btn = document.getElementById('m-btn');
             document.getElementById('m-title').innerText = win ? "✅ 正確！" : "❌ 答錯了";
             document.getElementById('m-title').style.color = win ? "#2ecc71" : "#e74c3c";
-            document.getElementById('m-body').innerText = `正確答案是：${current.o[current.a]}`;
-            document.getElementById('m-explanation').innerHTML = `<b>💡 解析：</b><br>${current.d}`;
+            document.getElementById('m-body').innerText = `正確答案：${current.o[current.a]}`;
+            
+            const exp = document.getElementById('m-explanation');
+            exp.style.display = "block";
+            exp.innerHTML = `<b>💡 解析：</b><br>${current.d}`;
+            
+            btn.innerText = "繼續下一題";
+            btn.onclick = closeM;
             document.getElementById('modal').style.display = "flex";
         }
 
         function showFinalWinner() {
+            const btn = document.getElementById('m-btn');
             const winner = score > 0 ? gameData.nameA : (score < 0 ? gameData.nameB : "雙方");
+            
             document.getElementById('m-title').innerText = "🏆 遊戲結束";
             document.getElementById('m-title').style.color = "#f1c40f";
-            document.getElementById('m-body').innerText = `${winner} 獲得最終勝利！`;
-            document.getElementById('m-explanation').innerText = "點擊下方按鈕重新開始挑戰。";
-            const btn = document.querySelector('#modal button');
+            document.getElementById('m-body').innerText = `${winner} 獲勝！`;
+            document.getElementById('m-explanation').style.display = "none";
+            
+            // 重要修正：按鈕變為重新開始並觸發重新載入
             btn.innerText = "重新開始遊戲";
             btn.onclick = () => location.reload();
+            
             document.getElementById('modal').style.display = "flex";
         }
 
