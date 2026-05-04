@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>知識拔河：雙人對戰版</title>
+    <style>
+        :root { --team-a: #3498db; --team-b: #e74c3c; --accent: #f1c40f; }
+        body { font-family: -apple-system, sans-serif; background: #f0f3f5; margin: 0; overflow: hidden; touch-action: manipulation; }
+        #header { height: 130px; background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.1); position: relative; }
+        #track-container { width: 80%; margin: 0 auto; position: relative; top: 50px; }
+        #track { width: 100%; height: 12px; background: #ddd; border-radius: 6px; }
+        #rope { width: 44px; height: 44px; background: var(--accent); border: 3px solid #333; border-radius: 50%; position: absolute; top: -16px; left: calc(50% - 22px); transition: left 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .win-gate { position: absolute; height: 30px; width: 4px; background: #333; top: -10px; }
+        #main-game { display: flex; height: calc(100vh - 130px); }
+        .team-side { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        #side-a { background: #ebf5ff; border-right: 1px solid #ddd; }
+        #side-b { background: #fff5f5; }
+        #q-box { position: absolute; top: 145px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 600px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); text-align: center; z-index: 100; border: 2px solid #333; }
+        .options-grid { width: 100%; max-width: 280px; display: grid; gap: 12px; margin-top: 80px; }
+        .opt-btn { padding: 20px 10px; font-size: 18px; border-radius: 12px; border: 2px solid #ccc; background: white; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; color: white; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <div id="track-container">
+            <div id="track"><div id="rope">0</div></div>
+            <div class="win-gate" style="left:0"></div>
+            <div class="win-gate" style="right:0"></div>
+        </div>
+    </div>
+    <div id="q-box"><p id="q-text" style="font-size:22px; font-weight:bold; margin:0;">準備開始...</p></div>
+    <div id="main-game">
+        <div class="team-side" id="side-a"><div class="options-grid" id="opts-a"></div></div>
+        <div class="team-side" id="side-b"><div class="options-grid" id="opts-b"></div></div>
+    </div>
+    <div id="modal">
+        <div style="background:white; color:#333; width:80%; max-width:400px; padding:30px; border-radius:20px; text-align:center;">
+            <h2 id="m-title"></h2>
+            <p id="m-desc"></p>
+            <button onclick="closeM()" style="width:100%; padding:15px; background:#333; color:white; border:none; border-radius:10px;">下一題</button>
+        </div>
+    </div>
+    <script>
+        const config = { win: 10, questions: [
+            { q: "地球上最大的動物？", o: ["大象", "藍鯨", "長頸鹿", "河馬"], a: 1, d: "藍鯨是目前地球上已知體型最大的動物。" },
+            { q: "水在攝氏幾度時會結冰？", o: ["100度", "10度", "0度", "-10度"], a: 2, d: "在標準大氣壓下，水的冰點是 0°C。" },
+            { q: "光合作用主要是植物利用什麼能？", o: ["熱能", "動能", "光能", "化學能"], a: 2, d: "植物透過葉綠素吸收太陽的光能來製造養分。" }
+        ]};
+        let score = 0, avail = [], current = null, locked = false;
+        function init() { avail = [...config.questions]; next(); }
+        function next() {
+            if (avail.length === 0) avail = [...config.questions];
+            locked = false; current = avail.splice(Math.floor(Math.random()*avail.length), 1)[0];
+            document.getElementById('q-text').innerText = current.q;
+            ['a', 'b'].forEach(t => {
+                const box = document.getElementById('opts-'+t); box.innerHTML = '';
+                current.o.forEach((txt, i) => {
+                    const b = document.createElement('button'); b.className = 'opt-btn'; b.innerText = txt;
+                    b.onclick = () => { if(!locked) { locked=true; const win=(i===current.a); score+=(t==='a'?(win?1:-1):(win?-1:1)); showM(win, t); }};
+                    box.appendChild(b);
+                });
+            });
+        }
+        function showM(win, t) {
+            document.getElementById('m-title').innerText = win ? "✅ 正確" : "❌ 錯誤";
+            document.getElementById('m-desc').innerHTML = `<b>答案：${current.o[current.a]}</b><br>${current.d}`;
+            document.getElementById('modal').style.display = 'flex';
+            const offset = 50 - (score * 5);
+            document.getElementById('rope').style.left = `calc(${offset}% - 22px)`;
+            document.getElementById('rope').innerText = Math.abs(score);
+        }
+        function closeM() { 
+            document.getElementById('modal').style.display = 'none'; 
+            if(Math.abs(score)>=config.win) { alert((score>0?"左邊藍隊":"右邊紅隊")+"獲勝！"); score=0; location.reload(); } else next();
+        }
+        init();
+    </script>
+</body>
+</html>
