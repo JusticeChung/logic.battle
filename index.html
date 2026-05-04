@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>知識拔河：同步修正版</title>
+    <title>知識拔河：長題目優化版</title>
     <style>
         :root { --team-a-col: #3498db; --team-b-col: #e74c3c; }
         body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #f0f3f5; margin: 0; overflow: hidden; touch-action: manipulation; }
@@ -19,22 +19,32 @@
         }
         
         .team-name-label { position: absolute; top: -25px; font-weight: 900; font-size: 20px; }
-        #main-game { display: flex; height: calc(100vh - 130px); }
-        .team-side { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        #side-a { background: #ebf5ff; border-right: 3px dashed #adcce9; }
-        #side-b { background: #fff5f5; }
+
+        /* 題目框優化：置左對齊與保留換行 */
+        #q-box { 
+            position: absolute; top: 130px; left: 50%; transform: translateX(-50%); 
+            width: 85%; max-width: 700px; background: white; padding: 25px; border-radius: 20px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15); z-index: 100; border: 3px solid #333;
+            text-align: left; /* 題目置左 */
+            white-space: pre-wrap; /* 保留換行符號 */
+            word-wrap: break-word;
+        }
         
-        #q-box { position: absolute; top: 130px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 700px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.15); text-align: center; z-index: 100; border: 3px solid #333; }
-        .options-grid { width: 100%; max-width: 320px; display: grid; gap: 12px; margin-top: 80px; }
+        #q-text { font-size: 24px; font-weight: bold; margin: 10px 0; line-height: 1.4; color: #2c3e50; }
+
+        .options-grid { width: 100%; max-width: 320px; display: grid; gap: 12px; margin-top: 110px; }
         .opt-btn { padding: 18px 10px; font-size: 20px; font-weight: bold; border-radius: 15px; border: 3px solid #ddd; background: white; cursor: pointer; box-shadow: 0 6px 0 #ddd; }
         
         .nav-btns { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 500; }
         .nav-btn { padding: 12px 20px; border-radius: 30px; border: none; color: white; font-weight: bold; font-size: 14px; cursor: pointer; }
 
+        /* 編輯面板優化 */
         #settings-panel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; padding: 20px; overflow-y: auto; box-sizing: border-box; }
         .sync-box { background: #fef9e7; padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 2px dashed #f1c40f; }
-        .q-input-row { background: #f0f4f7; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
-        textarea { width: 100%; height: 60px; margin-top: 10px; }
+        .q-input-row { background: #f0f4f7; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #ddd; }
+        
+        .edit-textarea { width: 100%; height: 80px; margin: 5px 0; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
+        .sync-textarea { width: 100%; height: 60px; margin-top: 10px; box-sizing: border-box; }
         
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
         #modal-content { background: white; width: 85%; max-width: 450px; padding: 30px; border-radius: 30px; text-align: center; }
@@ -43,7 +53,7 @@
 <body>
 
     <div class="nav-btns">
-        <button class="nav-btn" style="background: #333;" onclick="toggleSet(true)">⚙️ 編輯/同步</button>
+        <button class="nav-btn" style="background: #333;" onclick="toggleSet(true)">⚙️ 編輯與同步</button>
         <button class="nav-btn" style="background: #f39c12;" onclick="location.reload()">🔄 重新開始</button>
     </div>
 
@@ -56,8 +66,8 @@
     </div>
 
     <div id="q-box">
-        <div id="q-count" style="font-size:14px; color: #888;">剩餘題目: 0</div>
-        <p id="q-text" style="font-size:26px; font-weight:bold; margin:10px 0;">載入中...</p>
+        <div id="q-count" style="font-size:14px; color: #888; text-align: center;">剩餘題目: 0</div>
+        <div id="q-text">載入中...</div>
     </div>
 
     <div id="main-game">
@@ -65,52 +75,45 @@
         <div class="team-side" id="side-b"><div class="options-grid" id="opts-b"></div></div>
     </div>
 
-    <!-- 編輯與同步面板 -->
     <div id="settings-panel">
         <h2>⚙️ 題庫管理與同步</h2>
         
         <div class="sync-box">
             <strong>📱 跨裝置同步：</strong><br>
-            <button onclick="exportData()" style="background:#f39c12; color:white; border:none; padding:8px 15px; border-radius:5px; margin-top:10px;">📤 複製題庫密碼 (發送到其他裝置)</button>
-            <textarea id="import-area" placeholder="在此貼上其他裝置複製的密碼..."></textarea>
-            <button onclick="importData()" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:5px; margin-top:5px;">📥 貼上並匯入題庫</button>
+            <button onclick="exportData()" style="background:#f39c12; color:white; border:none; padding:8px 15px; border-radius:5px; margin-top:10px;">📤 複製題庫密碼</button>
+            <textarea id="import-area" class="sync-textarea" placeholder="在此貼上密碼..."></textarea>
+            <button onclick="importData()" style="background:#27ae60; color:white; border:none; padding:8px 15px; border-radius:5px; margin-top:5px;">📥 匯入題庫</button>
         </div>
 
         <div id="q-list-container"></div>
         <button onclick="addQRow()" style="background:#3498db; color:white; border:none; padding:15px; border-radius:10px; width:100%;">+ 新增題目</button>
-        <button onclick="saveSet()" style="background:#2ecc71; color:white; padding:20px; border:none; border-radius:15px; width:100%; margin-top:15px; font-size:20px;">💾 儲存並套用</button>
+        <button onclick="saveSet()" style="background:#2ecc71; color:white; padding:20px; border:none; border-radius:15px; width:100%; margin-top:15px; font-size:20px; font-weight:bold;">💾 儲存並套用</button>
         <button onclick="toggleSet(false)" style="width:100%; padding:10px; color:#666; border:none; background:none;">取消</button>
     </div>
 
     <div id="modal">
         <div id="modal-content">
             <h2 id="m-title" style="font-size:32px;"></h2>
-            <div id="m-body"></div>
-            <button onclick="closeM()" id="m-btn" style="width:100%; padding:18px; background:#333; color:white; border:none; border-radius:15px; font-size:22px; margin-top:20px;">繼續</button>
+            <div id="m-body" style="font-size: 20px; margin: 20px 0;"></div>
+            <button onclick="closeM()" id="m-btn" style="width:100%; padding:18px; background:#333; color:white; border:none; border-radius:15px; font-size:22px;">繼續</button>
         </div>
     </div>
 
     <script>
-        let gameData = { win: 5, nameA: "藍隊", nameB: "紅隊", questions: [{ q: "測試題目", o: ["1", "2", "3", "4"], a: 0, d: "測試解析" }] };
+        let gameData = { win: 5, nameA: "藍隊", nameB: "紅隊", questions: [{ q: "這是一個長題目範例：\n第一行內容\n第二行內容", o: ["答案1", "答案2", "答案3", "答案4"], a: 0, d: "" }] };
         let score = 0, pool = [], current = null, locked = false;
 
-        // 【新增】匯出功能
         function exportData() {
             const dataStr = btoa(unescape(encodeURIComponent(JSON.stringify(gameData))));
-            navigator.clipboard.writeText(dataStr).then(() => alert("題庫密碼已複製！請發送到其他裝置貼上匯入。"));
+            navigator.clipboard.writeText(dataStr).then(() => alert("題庫密碼已複製！"));
         }
 
-        // 【新增】匯入功能
         function importData() {
             const input = document.getElementById('import-area').value;
             try {
                 const decoded = JSON.parse(decodeURIComponent(escape(atob(input))));
-                if(decoded.questions) {
-                    gameData = decoded;
-                    saveSet();
-                    alert("匯入成功！");
-                }
-            } catch(e) { alert("無效的密碼，請檢查是否複製完整。"); }
+                if(decoded.questions) { gameData = decoded; saveSet(); alert("匯入成功！"); }
+            } catch(e) { alert("無效的密碼。"); }
         }
 
         function toggleSet(show) { document.getElementById('settings-panel').style.display = show ? 'block' : 'none'; if(show) renderQRows(); }
@@ -125,10 +128,11 @@
             const row = document.createElement('div');
             row.className = 'q-input-row';
             row.innerHTML = `
-                題目：<input type="text" class="in-q" value="${q.q}" style="width:80%">
-                選項：<input type="text" class="in-o" value="${q.o.join(',')}" style="width:80%">
-                答案(0-3)：<input type="number" class="in-a" value="${q.a}">
-                <button onclick="this.parentElement.remove()" style="color:red; border:none; background:none;">[刪除]</button>
+                題目 (可換行)：<textarea class="in-q edit-textarea">${q.q}</textarea>
+                選項 (逗號隔開)：<input type="text" class="in-o" value="${q.o.join(',')}" style="width:100%; margin: 5px 0; padding: 8px;">
+                答案索引 (0-3)：<input type="number" class="in-a" value="${q.a}" style="width:50px; padding: 5px;">
+                <button onclick="this.parentElement.remove()" style="color:red; border:none; background:none; float:right;">[刪除]</button>
+                <div style="clear:both;"></div>
             `;
             document.getElementById('q-list-container').appendChild(row);
         }
@@ -141,7 +145,7 @@
                 if(q && o.length >= 2) newQs.push({ q, o, a: parseInt(row.querySelector('.in-a').value)||0, d: "" });
             });
             if(newQs.length > 0) gameData.questions = newQs;
-            localStorage.setItem('tug_v9', JSON.stringify(gameData));
+            localStorage.setItem('tug_v10', JSON.stringify(gameData));
             location.reload();
         }
 
@@ -153,7 +157,7 @@
         }
 
         function init() {
-            const saved = localStorage.getItem('tug_v9');
+            const saved = localStorage.getItem('tug_v10');
             if (saved) gameData = JSON.parse(saved);
             document.getElementById('label-a').innerText = gameData.nameA;
             document.getElementById('label-b').innerText = gameData.nameB;
@@ -193,7 +197,7 @@
         function showResultModal(win) {
             document.getElementById('m-title').innerText = win ? "✅ 正確！" : "❌ 答錯了";
             document.getElementById('m-title').style.color = win ? "#2ecc71" : "#e74c3c";
-            document.getElementById('m-body').innerHTML = `答案：${current.o[current.a]}`;
+            document.getElementById('m-body').innerText = `正確答案：${current.o[current.a]}`;
             document.getElementById('modal').style.display = "flex";
         }
 
