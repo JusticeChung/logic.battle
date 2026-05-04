@@ -7,32 +7,24 @@
     <style>
         :root { --team-a-col: #3498db; --team-b-col: #e74c3c; }
         body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #f0f3f5; margin: 0; overflow: hidden; touch-action: manipulation; }
-        
-        /* 頂部拔河區 */
         #header { height: 130px; background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.1); position: relative; z-index: 50; }
         #track-container { width: 85%; margin: 0 auto; position: relative; top: 50px; }
         #track { width: 100%; height: 14px; background: #eee; border-radius: 7px; border: 1px solid #ddd; }
         #rope { width: 48px; height: 48px; background: #f1c40f; border: 3px solid #333; border-radius: 50%; position: absolute; top: -20px; left: calc(50% - 24px); transition: left 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .team-name-label { position: absolute; top: -35px; font-weight: 900; font-size: 18px; }
-        
-        /* 遊戲主體 */
         #main-game { display: flex; height: calc(100vh - 130px); }
         .team-side { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; transition: 0.3s; }
         #side-a { background: #ebf5ff; border-right: 2px dashed #ccc; }
         #side-b { background: #fff5f5; }
         #q-box { position: absolute; top: 145px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 650px; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; z-index: 100; border: 3px solid #333; }
-        
         .options-grid { width: 100%; max-width: 300px; display: grid; gap: 15px; margin-top: 100px; }
-        .opt-btn { padding: 20px 15px; font-size: 20px; font-weight: bold; border-radius: 15px; border: 2px solid #ddd; background: white; cursor: pointer; box-shadow: 0 4px 0 #ddd; active: translateY(4px); -webkit-tap-highlight-color: transparent; }
+        .opt-btn { padding: 20px 15px; font-size: 20px; font-weight: bold; border-radius: 15px; border: 2px solid #ddd; background: white; cursor: pointer; box-shadow: 0 4px 0 #ddd; -webkit-tap-highlight-color: transparent; }
         .opt-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #ddd; }
-
-        /* 人性化設定面板 */
         #settings-panel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; z-index: 1000; padding: 20px; overflow-y: auto; box-sizing: border-box; }
         .settings-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #eee; }
         .q-input-row { display: flex; flex-direction: column; padding: 15px; background: #fefefe; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 10px; }
         .q-input-row input { margin: 5px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
         .config-btn { position: absolute; top: 10px; right: 10px; background: #333; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-weight: bold; z-index: 200; }
-        
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; color: white; }
     </style>
 </head>
@@ -54,32 +46,26 @@
         <div class="team-side" id="side-b"><div class="options-grid" id="opts-b"></div></div>
     </div>
 
-    <!-- 人性化設定頁面 -->
     <div id="settings-panel">
         <h1 style="text-align:center;">🛠️ 遊戲內容管理</h1>
-        
         <div class="settings-card">
             <h3>基本資訊</h3>
-            藍隊名稱：<input type="text" id="set-name-a" style="width:100px"> 
-            紅隊名稱：<input type="text" id="set-name-b" style="width:100px"> 
+            藍隊：<input type="text" id="set-name-a" style="width:100px"> 
+            紅隊：<input type="text" id="set-name-b" style="width:100px"> 
             <br><br>
-            勝利分數：<input type="number" id="set-win" style="width:60px"> (拔河到達此分數即結束)
+            勝利分數：<input type="number" id="set-win" style="width:60px">
         </div>
-
         <div class="settings-card">
             <h3>題庫編輯</h3>
             <div id="q-list-container"></div>
             <button onclick="addQRow()" style="background:#3498db; color:white; border:none; padding:10px; border-radius:5px; width:100%; margin-top:10px;">+ 新增一題</button>
         </div>
-
-        <button onclick="saveSet()" style="background:#2ecc71; color:white; padding:20px; border:none; border-radius:15px; font-size:20px; font-weight:bold; width:100%; margin-top:10px; box-shadow: 0 5px 0 #27ae60;">💾 儲存設定並開始遊戲</button>
+        <button onclick="saveSet()" style="background:#2ecc71; color:white; padding:20px; border:none; border-radius:15px; font-size:20px; font-weight:bold; width:100%; margin-top:10px; box-shadow: 0 5px 0 #27ae60;">💾 儲存並開始</button>
         <button onclick="toggleSet(false)" style="margin-top:20px; background:#ccc; color:#333; padding:10px; border:none; border-radius:10px; width:100%;">返回遊戲</button>
-        <div style="height:50px;"></div>
     </div>
 
-    <!-- 彈出視窗 -->
     <div id="modal">
-        <div style="background:white; color:#333; width:85%; max-width:400px; padding:30px; border-radius:25px; text-align:center;">
+        <div id="modal-content" style="background:white; color:#333; width:85%; max-width:400px; padding:30px; border-radius:25px; text-align:center;">
             <h2 id="m-title" style="font-size:30px; margin:0;"></h2>
             <hr>
             <p id="m-desc" style="font-size:18px; line-height:1.6;"></p>
@@ -88,13 +74,7 @@
     </div>
 
     <script>
-        let gameData = {
-            win: 5, nameA: "藍隊", nameB: "紅隊",
-            questions: [
-                { q: "1+1等於幾？", o: ["1", "2", "3", "4"], a: 1, d: "這是基礎數學題。" },
-                { q: "草莓是什麼顏色的？", o: ["藍色", "黃色", "紅色", "紫色"], a: 2, d: "成熟的草莓通常是紅色的。" }
-            ]
-        };
+        let gameData = { win: 5, nameA: "藍隊", nameB: "紅隊", questions: [{ q: "1+1？", o: ["1", "2", "3", "4"], a: 1, d: "" }] };
         let score = 0, pool = [], current = null, locked = false;
 
         function toggleSet(show) { 
@@ -102,25 +82,22 @@
             if(show) renderQRows();
         }
 
-        // 渲染題庫編輯行
         function renderQRows() {
             const container = document.getElementById('q-list-container');
             container.innerHTML = '';
-            gameData.questions.forEach((q, idx) => {
-                addQRow(q, idx);
-            });
+            gameData.questions.forEach((q, idx) => addQRow(q));
         }
 
-        function addQRow(q = {q:'', o:['','','',''], a:0, d:''}, idx = null) {
+        function addQRow(q = {q:'', o:['','','',''], a:0, d:''}) {
             const container = document.getElementById('q-list-container');
             const row = document.createElement('div');
             row.className = 'q-input-row';
             row.innerHTML = `
-                <b>題目：</b><input type="text" class="in-q" value="${q.q}" placeholder="請輸入問題內容">
-                <b>選項 (以逗號隔開)：</b><input type="text" class="in-o" value="${q.o.join(',')}" placeholder="選項1,選項2,選項3,選項4">
-                <b>正確答案 (0為第1個)：</b><input type="number" class="in-a" value="${q.a}" min="0" max="3">
-                <b>解析：</b><input type="text" class="in-d" value="${q.d}" placeholder="選填題目解析">
-                <button onclick="this.parentElement.remove()" style="background:#e74c3c; color:white; border:none; margin-top:5px; border-radius:3px;">刪除此題</button>
+                <b>題目：</b><input type="text" class="in-q" value="${q.q}">
+                <b>選項：</b><input type="text" class="in-o" value="${q.o.join(',')}">
+                <b>答案：</b><input type="number" class="in-a" value="${q.a}" min="0" max="3">
+                <b>解析：</b><input type="text" class="in-d" value="${q.d}">
+                <button onclick="this.parentElement.remove()" style="background:#e74c3c; color:white; border:none; margin-top:5px; border-radius:3px;">刪除</button>
             `;
             container.appendChild(row);
         }
@@ -129,49 +106,49 @@
             gameData.nameA = document.getElementById('set-name-a').value;
             gameData.nameB = document.getElementById('set-name-b').value;
             gameData.win = parseInt(document.getElementById('set-win').value) || 5;
-            
             const rows = document.querySelectorAll('.q-input-row');
             const newQs = [];
             rows.forEach(row => {
                 const q = row.querySelector('.in-q').value;
                 const o = row.querySelector('.in-o').value.split(',');
-                const a = parseInt(row.querySelector('.in-a').value);
-                const d = row.querySelector('.in-d').value;
-                if(q && o.length >= 2) newQs.push({ q, o, a, d });
+                if(q && o.length >= 2) newQs.push({ q, o, a: parseInt(row.querySelector('.in-a').value), d: row.querySelector('.in-d').value });
             });
-            
             gameData.questions = newQs;
-            localStorage.setItem('tug_v3_data', JSON.stringify(gameData));
+            localStorage.setItem('tug_v4_final', JSON.stringify(gameData));
             location.reload();
         }
 
         function init() {
-            const saved = localStorage.getItem('tug_v3_data');
+            const saved = localStorage.getItem('tug_v4_final');
             if (saved) gameData = JSON.parse(saved);
-            
             document.getElementById('label-a').innerText = gameData.nameA;
             document.getElementById('label-b').innerText = gameData.nameB;
             document.getElementById('set-name-a').value = gameData.nameA;
             document.getElementById('set-name-b').value = gameData.nameB;
             document.getElementById('set-win').value = gameData.win;
-
-            // 核心：洗牌功能，確保題目不重複
             pool = [...gameData.questions].sort(() => Math.random() - 0.5);
             next();
         }
 
         function next() {
             if (pool.length === 0) {
-                document.getElementById('q-text').innerText = "題庫已出完，將重新隨機出題！";
-                pool = [...gameData.questions].sort(() => Math.random() - 0.5);
-                setTimeout(next, 2000);
+                // 題庫用完，強制判定勝負
+                let winnerText = "";
+                if (score > 0) winnerText = gameData.nameA + " 領先獲勝！";
+                else if (score < 0) winnerText = gameData.nameB + " 領先獲勝！";
+                else winnerText = "雙方平手！";
+                
+                document.getElementById('m-title').innerText = "🏁 題目已出完";
+                document.getElementById('m-desc').innerHTML = `<h1 style="color:#f39c12">${winnerText}</h1>最終分數為：${Math.abs(score)}`;
+                document.getElementById('m-btn').innerText = "重新開始";
+                document.getElementById('m-btn').onclick = () => location.reload();
+                document.getElementById('modal').style.display = 'flex';
                 return;
             }
             locked = false;
-            current = pool.pop(); // 每次取出一題，就不會重複
+            current = pool.pop();
             document.getElementById('q-count').innerText = `剩餘題目: ${pool.length}`;
             document.getElementById('q-text').innerText = current.q;
-            
             ['a', 'b'].forEach(t => {
                 const box = document.getElementById('opts-'+t); box.innerHTML = '';
                 current.o.forEach((txt, i) => {
@@ -183,48 +160,33 @@
         }
 
         function check(idx, team) {
-            const isCorrect = (idx === current.a);
-            // 計分邏輯：對+1，錯-1
-            if(team === 'a') score += (isCorrect ? 1 : -1);
-            else score += (isCorrect ? -1 : 1);
-            
-            showM(isCorrect);
+            const win = (idx === current.a);
+            if(team === 'a') score += (win ? 1 : -1);
+            else score += (win ? -1 : 1);
+            showM(win);
         }
 
         function showM(win) {
-            const modal = document.getElementById('modal');
-            const title = document.getElementById('m-title');
-            const desc = document.getElementById('m-desc');
-            const btn = document.getElementById('m-btn');
-            
-            modal.style.display = 'flex';
-            title.innerText = win ? "✅ 正確" : "❌ 錯誤";
-            title.style.color = win ? "#2ecc71" : "#e74c3c";
-            desc.innerHTML = `<b>答案是：${current.o[current.a]}</b><br><br>${current.d}`;
-            
-            // 更新拔河位置
-            const ratio = 50 / gameData.win;
-            const offset = 50 - (score * ratio);
-            document.getElementById('rope').style.left = `calc(${offset}% - 24px)`;
+            document.getElementById('m-title').innerText = win ? "✅ 正確" : "❌ 錯誤";
+            document.getElementById('m-title').style.color = win ? "#2ecc71" : "#e74c3c";
+            document.getElementById('m-desc').innerHTML = `<b>答案是：${current.o[current.a]}</b><br>${current.d}`;
+            document.getElementById('modal').style.display = 'flex';
+            const offset = 50 - (score * (50/gameData.win));
+            document.getElementById('rope').style.left = `calc(${Math.max(0, Math.min(100, offset))}% - 24px)`;
             document.getElementById('rope').innerText = Math.abs(score);
 
-            // 檢查勝負
             if(Math.abs(score) >= gameData.win) {
                 const winner = score > 0 ? gameData.nameA : gameData.nameB;
-                title.innerText = "🏆 勝利！";
-                desc.innerHTML = `<h1 style="color:#f1c40f">${winner} 獲勝！</h1>已經達到指定分數：${gameData.win}分`;
-                btn.innerText = "重新開始";
-                btn.onclick = () => location.reload();
+                document.getElementById('m-title').innerText = "🏆 最終勝利";
+                document.getElementById('m-desc').innerHTML = `<h1 style="color:#f1c40f">${winner} 獲勝！</h1>已達標：${gameData.win}分`;
+                document.getElementById('m-btn').innerText = "重新開始";
+                document.getElementById('m-btn').onclick = () => location.reload();
             } else {
-                btn.onclick = closeM;
+                document.getElementById('m-btn').onclick = closeM;
             }
         }
 
-        function closeM() { 
-            document.getElementById('modal').style.display = 'none'; 
-            next();
-        }
-
+        function closeM() { document.getElementById('modal').style.display = 'none'; next(); }
         init();
     </script>
 </body>
